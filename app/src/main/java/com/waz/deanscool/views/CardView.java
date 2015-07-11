@@ -246,6 +246,10 @@ public class CardView extends View {
             float endX = e2.getX() - originX;
             float endY = e2.getY() - originY;
 
+            Log.d(TAG, "Start point: (" + startX + ", " + startY + ")");
+            Log.d(TAG, "End point: (" + endX + ", " + endY + ")");
+            Log.d(TAG, "(dx, dy): (" + distanceX + ", " + distanceY + ")");
+
             float dotProduct = startX * endX + startY * endY;
 
             float magnitudeProduct = (float) (sqrt(startX * startX + startY * startY) *
@@ -253,7 +257,9 @@ public class CardView extends View {
 
             float angleTravelled = (float) toDegrees(acos(dotProduct / magnitudeProduct));
 
-            Log.d(TAG, "Angle: " + angleTravelled);
+            //cross product (i and j terms will be 0)
+            float crossProductK = startX * endY - startY * endX;
+            angleTravelled = crossProductK > 0 ? -angleTravelled : angleTravelled;
 
             setZAxisRot(zAxisRot + (int) angleTravelled);
             lastX = endX;
