@@ -1,13 +1,15 @@
 package com.waz.deanscool.views;
 
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Camera;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -15,10 +17,7 @@ import android.view.animation.LinearInterpolator;
 
 import com.waz.deanscool.R;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-import static java.lang.Math.toRadians;
+import static java.lang.Math.floor;
 
 public class CardView extends View {
 
@@ -30,10 +29,13 @@ public class CardView extends View {
      * How much the height varies as a result of perspective
      */
     private static final double MIN_HEIGHT_AS_RATIO_OF_NORMAL = 0.7;
-    private static final long ANIMATION_DURATION = 500;
+    private static final long ANIMATION_DURATION = 3000;
 
-    private int backColor;
+
+    private Bitmap frontBitmap;
     private int frontColor;
+    private Bitmap backBitmap;
+    private int backColor;
     private int zAxisRot;
 
     private Paint fillPaint;
@@ -69,6 +71,7 @@ public class CardView extends View {
 
     private void init() {
         fillPaint = new Paint();
+
     }
 
     public int getZAxisRot() {
@@ -83,9 +86,10 @@ public class CardView extends View {
         invalidate();
     }
 
-    public void rotateBy(int degrees) {
-        ObjectAnimator animator = ObjectAnimator.ofInt(this, "zAxisRot", zAxisRot, zAxisRot +
-                degrees).setDuration(ANIMATION_DURATION);
+    public void startYRotation() {
+        ObjectAnimator animator = ObjectAnimator.ofInt(this, "zAxisRot", 0, 360);
+        animator.setDuration(ANIMATION_DURATION);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setInterpolator(new LinearInterpolator());
         animator.start();
     }
@@ -93,151 +97,85 @@ public class CardView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
 
-        int color = getVisibleColor();
-        fillPaint.setColor(color);
+        Bitmap currentBackground = getCurrentBackground(canvas);
 
-        float[] leadingEdge = getLeadingEdgeCoords(canvas);
-        Log.d(TAG, "leading Edge: " + leadingEdge[0] + ", " + leadingEdge[1] + ", " + leadingEdge[2] + ", " + leadingEdge[3]);
-        float[] trailingEdge = getTrailingEdgeCoords(canvas);
+        Camera camera = new Camera();
+        camera.rotateZ(45);
+        camera.rotateY(zAxisRot);
+        Matrix matrix = new Matrix();
+        camera.getMatrix(matrix);
 
-//        Bitmap frontBitmap = decodeBitmap(R.drawable.minion1, canvas.getWidth(), canvas
-//                .getHeight());
-//        Log.d(TAG, "Bitmap size: " + frontBitmap.getWidth() + " x " + frontBitmap.getHeight());
-//        Canvas bitmapCanvas = new Canvas(frontBitmap);
+        matrix.preTranslate(-canvas.getWidth() / 2, -canvas.getHeight() / 2);
+        matrix.postTranslate(canvas.getWidth() / 2, canvas.getHeight() / 2);
 
-        Path path = new Path();
-        path.moveTo(leadingEdge[0], leadingEdge[1]);
-        path.lineTo(leadingEdge[2], leadingEdge[3]);
-        path.lineTo(trailingEdge[2], trailingEdge[3]);
-        path.lineTo(trailingEdge[0], trailingEdge[1]);
-        path.close();
-
-        canvas.drawPath(path, fillPaint);
-
-//        Matrix matrix = new Matrix();
-//
-//        matrix.postScale();
-//
-//        Bitmap scaledBitmap = Bitmap.createScaledBitmap(frontBitmap, canvas.getWidth(), canvas.getHeight(), true);
-//
-//        Bitmap rotatedBitmap = Bitmap.createBitmap(scaledBitmap , 0, 0, scaledBitmap .getWidth(), scaledBitmap .getHeight(), matrix, true);
-//
-//        canvas.drawBitmap(rotatedBitmap, 0, 0, fillPaint);
-
+        //Not too sure why putting the matrix directly into here worked...
+        canvas.drawBitmap(currentBackground, matrix, fillPaint);
 
     }
 
-    private int getVisibleColor() {
-        if (zAxisRot > 90 && zAxisRot <= 270) {
-            return backColor;
-        } else {
-            return frontColor;
+    private Bitmap getCurrentBackground(Canvas canvas) {
+        if (backBitmap == null) {
+            backBitmap = setBackgroundBitmap(R.drawable.minion2, canvas.getWidth(), canvas
+                    .getHeight());
         }
-    }
-
-    /**
-     * Let the leading edge be the right hand edge of the card when at 0 deg rotation.
-     *
-     * @param canvas
-     * @return the coordinates of the line representing the leading edge
-     * [topx, topy, bottomx, bottomy]
-     */
-    private float[] getLeadingEdgeCoords(Canvas canvas) {
-        int verticalAxis = canvas.getWidth() / 2;
-        int cardWidth = getPerceivedCardWidth(canvas.getWidth());
-
-        int horizAxis = canvas.getHeight() / 2;
-        int edgeHeight = getLeadingEdgeHeight(canvas.getHeight());
-
-        if (zAxisRot > 90 && zAxisRot <= 270) {
-            return new float[] {
-                verticalAxis + cardWidth / 2, horizAxis + edgeHeight / 2,
-                verticalAxis + cardWidth / 2, horizAxis - edgeHeight / 2
-            };
-        } else {
-            return new float[] {
-                verticalAxis - cardWidth / 2, horizAxis + edgeHeight / 2,
-                verticalAxis - cardWidth / 2, horizAxis - edgeHeight / 2
-            };
+        if (frontBitmap == null) {
+            frontBitmap = setBackgroundBitmap(R.drawable.minion1, canvas.getWidth(), canvas
+                    .getHeight());
         }
-    }
 
-    /**
-     * Let the trailing edge be the left hand edge of the card when at 0 deg rotation.
-     *
-     * @param canvas
-     * @return the coordinates of the line representing the leading edge
-     * [topx, topy, bottomx, bottomy]
-     */
-    private float[] getTrailingEdgeCoords(Canvas canvas) {
-        int verticalAxis = canvas.getWidth() / 2;
-        int cardWidth = getPerceivedCardWidth(canvas.getWidth());
-
-        int horizAxis = canvas.getHeight() / 2;
-        int edgeHeight = getTrailingEdgeHeight(canvas.getHeight());
-
+        Bitmap currentBackground;
         if (zAxisRot > 90 && zAxisRot <= 270) {
-            return new float[] {
-                    verticalAxis - cardWidth / 2, horizAxis + edgeHeight / 2,
-                    verticalAxis - cardWidth / 2, horizAxis - edgeHeight / 2
-            };
+            currentBackground = backBitmap;
         } else {
-            return new float[] {
-                    verticalAxis + cardWidth / 2, horizAxis + edgeHeight / 2,
-                    verticalAxis + cardWidth / 2, horizAxis - edgeHeight / 2
-            };
+            currentBackground = frontBitmap;
         }
+        return currentBackground;
     }
 
-    private int getPerceivedCardWidth(int originalCanvasWidth) {
-        double canvasWidthRatio = cos(toRadians(zAxisRot));
-        return abs((int) (originalCanvasWidth * canvasWidthRatio));
-    }
-
-    /**
-     * The perceived height of the left edge of the card, where the left edge
-     * is assumed to be the left edge at 0 deg rotation.
-     *
-     * @return
-     */
-    private int getLeadingEdgeHeight(int canvasHeight) {
-        double heightDiff = (1.00 - MIN_HEIGHT_AS_RATIO_OF_NORMAL) * canvasHeight;
-        Log.d(TAG, "Height diff: " + heightDiff);
-        return canvasHeight + (int) (sin(toRadians(zAxisRot)) * heightDiff);
-    }
-
-    private int getTrailingEdgeHeight(int canvasHeight) {
-        double heightDiff = (1.00 - MIN_HEIGHT_AS_RATIO_OF_NORMAL) * canvasHeight;
-        return canvasHeight - (int) (sin(toRadians(zAxisRot)) * heightDiff);
+    private Bitmap setBackgroundBitmap(int resourceId, int reqWidth, int reqHeight) {
+        Bitmap bitmap = decodeBitmap(resourceId, reqWidth, reqHeight);
+        bitmap = Bitmap.createScaledBitmap(bitmap, reqWidth, reqHeight, true);
+        return bitmap;
     }
 
     private Bitmap decodeBitmap(int resourceId, int reqWidth, int reqHeight) {
         BitmapFactory.Options options = getBitmapOptions(resourceId);
-        options.inSampleSize = 8; //calculateInSampleSize(options, reqWidth, reqHeight);
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
         options.inJustDecodeBounds = false;
+
+        //allows resizing of the bitmaps
         options.inMutable = true;
-        return BitmapFactory.decodeResource(getResources(), resourceId, options);
+
+        //since the images are not transparent.
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+
+        //If this is not set, then the images will be scaled up to match the density of the device
+        //(scaled 2 or 3 times!). Alternatively, the image can be placed in a drawable-nodpi folder
+        options.inScaled = false;
+
+        Bitmap loadedBitmap = BitmapFactory.decodeResource(getResources(), resourceId, options);
+        Log.d(TAG, "Bitmap size: " + loadedBitmap.getWidth() + " x " + loadedBitmap.getHeight());
+        return loadedBitmap;
     }
 
     private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        final int height = options.outHeight;
         final int width = options.outWidth;
+        final int height = options.outHeight;
         int inSampleSize = 1;
 
-        if (height > reqHeight || width > reqWidth) {
+        if (reqWidth < width || reqHeight < height) {
+            double widthRatio = (double) width / (double) reqWidth;
+            double heightRatio = (double) height / (double) reqHeight;
 
-            final int halfHeight = height / 2;
-            final int halfWidth = width / 2;
-
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
-            while ((halfHeight / inSampleSize) > reqHeight
-                    && (halfWidth / inSampleSize) > reqWidth) {
-                inSampleSize *= 2;
+            double limitingRatio = widthRatio > heightRatio ? heightRatio : widthRatio;
+            if (limitingRatio < 1) {
+                inSampleSize = 1;
+            } else {
+                inSampleSize = (int) floor(limitingRatio);
             }
-            Log.d(TAG, "Required size: " + reqWidth + " x " + reqHeight);
-            Log.d(TAG, "inSampleSize: " + inSampleSize);
         }
+        Log.d(TAG, "Required size: " + reqWidth + " x " + reqHeight);
+        Log.d(TAG, "inSampleSize: " + inSampleSize);
 
         return inSampleSize;
     }

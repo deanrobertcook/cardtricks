@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int id = view.getId();
         switch (id) {
             case R.id.btn__rotate:
-                cardView.rotateBy(45);
+                cardView.startYRotation();
         }
     }
 }
