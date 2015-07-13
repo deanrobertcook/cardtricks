@@ -1,4 +1,4 @@
-package com.example.cardtricks;
+package com.example.cardtricks.data;
 
 import android.content.Context;
 import android.graphics.Bitmap;

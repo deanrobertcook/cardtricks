@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 
+import com.example.cardtricks.data.LoadBitmapTask;
 import com.example.cardtricks.views.CardView;
 
 
