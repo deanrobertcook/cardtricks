@@ -29,8 +29,14 @@ public class CardView extends View {
 
     private static final String TAG = CardView.class.getName();
 
-    private static final int DEFAULT_INITIAL_ROTATION = 0; //degrees
+    /**
+     * If the starting rotation is not set as an attribute - for both Z and Y axis rotation
+     */
+    private static final int DEFAULT_INITIAL_ROTATION = 0;
 
+    /**
+     * Time for one full rotation of the card about the Y axis in milliseconds (also, mHz)
+     */
     private static final long ROTATION_DURATION = 3000;
 
     private Bitmap frontBitmap;
@@ -43,7 +49,6 @@ public class CardView extends View {
 
     private GestureDetector gestureDetector;
     private GestureListener gestureListener;
-    private Paint testPaint;
 
     public CardView(Context context) {
         super(context);
