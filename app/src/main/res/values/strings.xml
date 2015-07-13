@@ -1,9 +1,10 @@
 <resources>
     <string name="app_name">ლ(ಠ益ಠლ)</string>
 
-    <string name="action_settings">ᕙ(░ಥ╭͜ʖ╮ಥ░)━☆ﾟ.*･｡ﾟ</string>
+    <string name="action_browse">ᕙ(░ಥ╭͜ʖ╮ಥ░)━☆ﾟ.*･｡ﾟ</string>
     <string name="tv__seekbar_title">Saturation</string>
 
     <string name="front_image_url">https://dl.dropboxusercontent.com/u/1638040/minion1.jpg</string>
     <string name="back_image_url">https://dl.dropboxusercontent.com/u/1638040/minion2.jpg</string>
+    <string name="action_browse_image_url">Browse for image</string>
 </resources>

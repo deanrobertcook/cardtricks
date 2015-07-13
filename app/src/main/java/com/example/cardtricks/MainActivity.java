@@ -1,5 +1,7 @@
 package com.example.cardtricks;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -7,6 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.example.cardtricks.data.LoadBitmapTask;
 import com.example.cardtricks.views.CardView;
@@ -26,6 +29,14 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
+
+        String customFrontUrl = getString(R.string.front_image_url);
+        if (intent.getAction().equals(Intent.ACTION_SEND) && intent.getType() != null) {
+            String customUrl = intent.getStringExtra(Intent.EXTRA_TEXT);
+            customFrontUrl = customUrl;
+        }
+
         setContentView(R.layout.activity_main);
 
         cardView = (CardView) findViewById(R.id.card__my_card);
@@ -38,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements
 
         LoadBitmapTask frontTask = new LoadBitmapTask(this, cardView, true);
         frontTask.setListener(this);
-        frontTask.execute(getString(R.string.front_image_url));
+        frontTask.execute(customFrontUrl);
 
         LoadBitmapTask backTask = new LoadBitmapTask(this, cardView, false);
         backTask.setListener(this);
@@ -47,24 +58,27 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up rotationButton, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_browse) {
+            sendBrowsingIntent();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void sendBrowsingIntent() {
+        Toast.makeText(this, "Try browsing for an image and then share it back to this app!",
+                Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.google.com/images"));
+        startActivity(intent);
     }
 
     @Override
@@ -88,8 +102,8 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onFinishExecution() {
-        imagesLoaded ++;
-        if (imagesLoaded == 2){
+        imagesLoaded++;
+        if (imagesLoaded == 2) {
             progressBar.setVisibility(View.GONE);
         }
     }
