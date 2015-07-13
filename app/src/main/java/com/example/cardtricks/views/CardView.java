@@ -5,7 +5,6 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Camera;
 import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
@@ -21,7 +20,6 @@ import android.view.animation.LinearInterpolator;
 import com.example.cardtricks.R;
 
 import static java.lang.Math.acos;
-import static java.lang.Math.floor;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toDegrees;
 
@@ -38,6 +36,15 @@ public class CardView extends View {
      * Time for one full rotation of the card about the Y axis in milliseconds (also, mHz)
      */
     private static final long ROTATION_DURATION = 3000;
+
+    /**
+     * Default colors to set the card's backgrounds to while the bitmap is still loading.
+     */
+    private static final int DEFAULT_FRONT_BACKGROUND_COLOR = R.color.blue;
+    private static final int DEFAULT_BACK_BACKGROUND_COLOR = R.color.red;
+
+    private int frontBackgroundColor;
+    private int backBackgroundColor;
 
     private Bitmap frontBitmap;
     private Bitmap backBitmap;
@@ -69,6 +76,8 @@ public class CardView extends View {
                 attrs, R.styleable.CardView, 0, 0);
 
         try {
+            frontBackgroundColor = a.getColor(R.styleable.CardView_color_background_front, getResources().getColor(DEFAULT_FRONT_BACKGROUND_COLOR));
+            backBackgroundColor = a.getColor(R.styleable.CardView_color_background_back, getResources().getColor(DEFAULT_BACK_BACKGROUND_COLOR));
             yAxisRot = a.getInt(R.styleable.CardView_initial_y_rotation, DEFAULT_INITIAL_ROTATION);
             zAxisRot = a.getInt(R.styleable.CardView_initial_z_rotation, DEFAULT_INITIAL_ROTATION);
         } finally {
@@ -79,6 +88,14 @@ public class CardView extends View {
 
         gestureListener = new GestureListener();
         gestureDetector = new GestureDetector(getContext(), gestureListener);
+    }
+
+    public void setFrontBitmap(Bitmap bitmap) {
+        this.frontBitmap = Bitmap.createScaledBitmap(bitmap, getWidth(), getHeight(), false);
+    }
+
+    public void setBackBitmap(Bitmap bitmap) {
+        this.backBitmap = Bitmap.createScaledBitmap(bitmap, getWidth(), getHeight(), false);;
     }
 
     public int getYAxisRot() {
@@ -116,7 +133,7 @@ public class CardView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
 
-        Bitmap currentBackground = getCurrentBackground(canvas);
+        Bitmap currentBackground = getCurrentBackground();
 
         Camera camera = new Camera();
         camera.rotateZ(zAxisRot);
@@ -136,12 +153,14 @@ public class CardView extends View {
 
     }
 
-    private Bitmap getCurrentBackground(Canvas canvas) {
+    private Bitmap getCurrentBackground() {
         if (backBitmap == null) {
-            backBitmap = setBackgroundBitmap(R.drawable.minion2);
+            backBitmap = getSolidColorBitmap(backBackgroundColor);
+//            backBitmap = setBackgroundBitmap(R.drawable.minion2);
         }
         if (frontBitmap == null) {
-            frontBitmap = setBackgroundBitmap(R.drawable.minion1);
+            frontBitmap = getSolidColorBitmap(frontBackgroundColor);
+//            frontBitmap = setBackgroundBitmap(R.drawable.minion1);
         }
 
         Bitmap currentBackground;
@@ -153,56 +172,10 @@ public class CardView extends View {
         return currentBackground;
     }
 
-    private Bitmap setBackgroundBitmap(int resourceId) {
-        Bitmap bitmap = decodeBitmap(resourceId, getWidth(), getHeight());
-        bitmap = Bitmap.createScaledBitmap(bitmap, getWidth(), getHeight(), true);
+    private Bitmap getSolidColorBitmap(int color) {
+        Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.RGB_565);
+        bitmap.eraseColor(color);
         return bitmap;
-    }
-
-    private Bitmap decodeBitmap(int resourceId, int reqWidth, int reqHeight) {
-        BitmapFactory.Options options = getBitmapOptions(resourceId);
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-        options.inJustDecodeBounds = false;
-
-        //allows resizing of the bitmaps
-        options.inMutable = true;
-
-        //since the images are not transparent, I can use this config to save space
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
-
-        //If this is not set, then the images will be scaled up to match the density of the device
-        //(scaled 2 or 3 times!). Alternatively, the image can be placed in a drawable-nodpi folder
-        options.inScaled = false;
-
-        Bitmap loadedBitmap = BitmapFactory.decodeResource(getResources(), resourceId, options);
-        return loadedBitmap;
-    }
-
-    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        final int width = options.outWidth;
-        final int height = options.outHeight;
-        int inSampleSize = 1;
-
-        if (reqWidth < width || reqHeight < height) {
-            double widthRatio = (double) width / (double) reqWidth;
-            double heightRatio = (double) height / (double) reqHeight;
-
-            double limitingRatio = widthRatio > heightRatio ? heightRatio : widthRatio;
-            if (limitingRatio < 1) {
-                inSampleSize = 1;
-            } else {
-                inSampleSize = (int) floor(limitingRatio);
-            }
-        }
-
-        return inSampleSize;
-    }
-
-    private BitmapFactory.Options getBitmapOptions(int resourceId) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeResource(getResources(), resourceId, options);
-        return options;
     }
 
     @Override

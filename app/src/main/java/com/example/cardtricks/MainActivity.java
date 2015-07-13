@@ -15,6 +15,10 @@ public class MainActivity extends AppCompatActivity implements
 
     private static final String TAG = MainActivity.class.getName();
 
+    private final static String foregroundPicURL = "https://dl.dropboxusercontent.com/u/1638040/minion1.jpg";
+    private final static String backgroundPicURL = "https://dl.dropboxusercontent.com/u/1638040/minion2.jpg";
+
+
     private Button rotationButton;
     private CardView cardView;
     private SeekBar saturationBar;
@@ -30,6 +34,9 @@ public class MainActivity extends AppCompatActivity implements
 
         saturationBar = (SeekBar) findViewById(R.id.seek_bar__saturation);
         saturationBar.setOnSeekBarChangeListener(this);
+
+        new LoadBitmapTask(this, cardView, true).execute(foregroundPicURL);
+        new LoadBitmapTask(this, cardView, false).execute(backgroundPicURL);
     }
 
     @Override
