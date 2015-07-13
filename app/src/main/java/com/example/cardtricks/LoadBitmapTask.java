@@ -3,28 +3,26 @@ package com.example.cardtricks;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.example.cardtricks.views.CardView;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import static java.lang.Math.floor;
 
 public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
 
     private final Context context;
     private final CardView cardView;
     private final boolean front;
+    private Listener listener;
 
     public LoadBitmapTask(Context context, CardView cardView, boolean front) {
         this.context = context;
@@ -32,51 +30,37 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
         this.front = front;
     }
 
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
     private static final String TAG = LoadBitmapTask.class.getName();
+
+    @Override
+    protected void onPreExecute() {
+        if (front && listener != null) {
+            listener.onStartExecution();
+        }
+    }
 
     @Override
     protected Bitmap doInBackground(String... params) {
         String urlString = params[0];
-//        String fileName = Uri.parse(urlString).getLastPathSegment();
-//
-//        Bitmap bitmap = fetchBitmapFromFile(fileName);
-//        if (bitmap == null) {
-//            downloadBitmapToFile(urlString, fileName);
-//            bitmap = fetchBitmapFromFile(fileName);
-//        }
-//
-//        Log.d(TAG, "Bitmap size: " + bitmap.getWidth() + "x" + bitmap.getHeight());
-//        return bitmap;
-        try {
-            URL url = new URL(urlString);
+        String fileName = Uri.parse(urlString).getLastPathSegment();
 
-            InputStream inputStream = url.openStream();
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = true;
-            BitmapFactory.decodeStream(inputStream, null, options);
-
-            Log.d(TAG, "Options size: " + options.outWidth + "x" + options.outHeight + ", " +
-                    "MimeType: " + options.outMimeType);
-
-            options.inJustDecodeBounds = false;
-            options.inSampleSize = calculateInSampleSize(options);
-            inputStream.close();
-
-            inputStream = url.openStream();
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream, null, options);
-            Log.d(TAG, "Bitmap size: " + bitmap.getWidth() + "x" + bitmap.getHeight());
-            inputStream.close();
-            return bitmap;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        //First attempt to find the bitmap in the internal storage
+        Bitmap bitmap = fetchBitmapFromFile(fileName);
+        if (bitmap == null) {
+            //otherwise attempt to download it.
+            downloadBitmapToFile(urlString, fileName);
+            bitmap = fetchBitmapFromFile(fileName);
         }
-        return null;
+        return bitmap;
     }
 
     private Bitmap fetchBitmapFromFile(String fileName) {
+        fileName = context.getFilesDir() + "/" + fileName;
+
         BitmapFactory.Options options = getBitmapOptions(fileName);
         Bitmap loadedBitmap = BitmapFactory.decodeFile(fileName, options);
         return loadedBitmap;
@@ -85,8 +69,6 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
     private BitmapFactory.Options getBitmapOptions(String fileName) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        Log.d(TAG, "Options size: " + options.outWidth + "x" + options.outHeight + ", MimeType: "
-                + options.outMimeType);
         BitmapFactory.decodeFile(fileName, options);
 
         //allows resizing of the bitmaps
@@ -108,19 +90,20 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
         int screenWidth = metrics.widthPixels;
         int screenHeight = metrics.heightPixels;
 
-        final int width = options.outWidth;
         final int height = options.outHeight;
+        final int width = options.outWidth;
         int inSampleSize = 1;
 
-        if (screenWidth < width || screenWidth < height) {
-            double widthRatio = (double) width / (double) screenWidth;
-            double heightRatio = (double) height / (double) screenHeight;
+        if (width > screenWidth || height > screenHeight) {
 
-            double limitingRatio = widthRatio > heightRatio ? heightRatio : widthRatio;
-            if (limitingRatio < 1) {
-                inSampleSize = 1;
-            } else {
-                inSampleSize = (int) floor(limitingRatio);
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfWidth / inSampleSize) > screenWidth
+                    && (halfHeight / inSampleSize) > screenHeight) {
+                inSampleSize *= 2;
             }
         }
 
@@ -131,16 +114,10 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
     }
 
     private void downloadBitmapToFile(String urlString, String fileName) {
-        HttpURLConnection connection;
-        File file = new File(context.getCacheDir(), fileName);
         try {
             URL url = new URL(urlString);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-
-            InputStream inputStream = connection.getInputStream();
-            OutputStream outputStream = new FileOutputStream(file);
+            InputStream inputStream = url.openStream();
+            FileOutputStream outputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE);
             writeBytesToFile(inputStream, outputStream);
 
             inputStream.close();
@@ -154,7 +131,8 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
     }
 
     private void writeBytesToFile(InputStream is, OutputStream os) throws IOException {
-        byte[] buffer = new byte[1024];
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
         int len;
         while ((len = is.read(buffer)) != -1) {
             os.write(buffer, 0, len);
@@ -169,5 +147,15 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
         } else {
             cardView.setBackBitmap(bitmap);
         }
+
+        if (listener != null) {
+            listener.onFinishExecution();
+        }
+    }
+
+    public interface Listener {
+        void onStartExecution();
+
+        void onFinishExecution();
     }
 }

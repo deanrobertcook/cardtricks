@@ -15,6 +15,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         />
+    
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="?android:progressBarStyleLarge"
+        android:layout_centerInParent="true"
+        android:layout_width="@dimen/progress_bar_size"
+        android:layout_height="@dimen/progress_bar_size"
+        android:progressDrawable="@drawable/progress_bar"
+        android:visibility="gone"
+        />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,19 +37,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingLeft="@dimen/padding_double"
-            android:text="Color Control Bar"
+            android:text="@string/tv__seekbar_title"
             android:textSize="18sp"
-            android:textColor="@color/black"/>
+            android:textColor="@color/bright_red"/>
 
         <SeekBar
             android:id="@+id/seek_bar__saturation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:progress="100"
-            android:progressDrawable="@color/black"
-            android:paddingRight="@dimen/padding_x4"
-            android:paddingLeft="@dimen/padding_x4"
-            android:thumb="@mipmap/seekbar_thumb"
+            style="@style/SeekBarStyle"
             />
     </LinearLayout>
 

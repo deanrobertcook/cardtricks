@@ -4,25 +4,24 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 
 import com.example.cardtricks.views.CardView;
 
 
 public class MainActivity extends AppCompatActivity implements
-        SeekBar.OnSeekBarChangeListener {
+        SeekBar.OnSeekBarChangeListener, LoadBitmapTask.Listener {
 
     private static final String TAG = MainActivity.class.getName();
 
     private final static String foregroundPicURL = "https://dl.dropboxusercontent.com/u/1638040/minion1.jpg";
     private final static String backgroundPicURL = "https://dl.dropboxusercontent.com/u/1638040/minion2.jpg";
 
-
-    private Button rotationButton;
     private CardView cardView;
     private SeekBar saturationBar;
-    private boolean saturationButtonToggle = false;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +34,15 @@ public class MainActivity extends AppCompatActivity implements
         saturationBar = (SeekBar) findViewById(R.id.seek_bar__saturation);
         saturationBar.setOnSeekBarChangeListener(this);
 
-        new LoadBitmapTask(this, cardView, true).execute(foregroundPicURL);
-        new LoadBitmapTask(this, cardView, false).execute(backgroundPicURL);
+        progressBar = (ProgressBar) findViewById(R.id.progress_bar);
+
+        LoadBitmapTask frontTask = new LoadBitmapTask(this, cardView, true);
+        frontTask.setListener(this);
+        frontTask.execute(foregroundPicURL);
+
+        LoadBitmapTask backTask = new LoadBitmapTask(this, cardView, false);
+        backTask.setListener(this);
+        backTask.execute(backgroundPicURL);
     }
 
     @Override
@@ -73,5 +79,15 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
+    }
+
+    @Override
+    public void onStartExecution() {
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onFinishExecution() {
+        progressBar.setVisibility(View.GONE);
     }
 }
