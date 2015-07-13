@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import com.example.cardtricks.views.CardView;
 
@@ -106,9 +105,6 @@ public class LoadBitmapTask extends AsyncTask<String, Void, Bitmap> {
                 inSampleSize *= 2;
             }
         }
-
-        Log.d(TAG, "Screen size: " + screenWidth + "x" + screenHeight);
-        Log.d(TAG, "Sample Size: " + inSampleSize);
 
         return inSampleSize;
     }

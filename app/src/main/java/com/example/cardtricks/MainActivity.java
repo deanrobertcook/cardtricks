@@ -16,12 +16,11 @@ public class MainActivity extends AppCompatActivity implements
 
     private static final String TAG = MainActivity.class.getName();
 
-    private final static String foregroundPicURL = "https://dl.dropboxusercontent.com/u/1638040/minion1.jpg";
-    private final static String backgroundPicURL = "https://dl.dropboxusercontent.com/u/1638040/minion2.jpg";
-
     private CardView cardView;
     private SeekBar saturationBar;
     private ProgressBar progressBar;
+
+    private int imagesLoaded = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,11 +37,11 @@ public class MainActivity extends AppCompatActivity implements
 
         LoadBitmapTask frontTask = new LoadBitmapTask(this, cardView, true);
         frontTask.setListener(this);
-        frontTask.execute(foregroundPicURL);
+        frontTask.execute(getString(R.string.front_image_url));
 
         LoadBitmapTask backTask = new LoadBitmapTask(this, cardView, false);
         backTask.setListener(this);
-        backTask.execute(backgroundPicURL);
+        backTask.execute(getString(R.string.back_image_url));
     }
 
     @Override
@@ -88,6 +87,9 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onFinishExecution() {
-        progressBar.setVisibility(View.GONE);
+        imagesLoaded ++;
+        if (imagesLoaded == 2){
+            progressBar.setVisibility(View.GONE);
+        }
     }
 }
